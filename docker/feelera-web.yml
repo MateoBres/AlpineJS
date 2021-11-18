@@ -1,0 +1,41 @@
+---
+- hosts: colibree
+  become: true
+  tasks:
+    - name: Remove old repo and recreate repo folder
+      file:
+        state: absent
+        path: "/home/feeleraweb/feelera-web/"
+      ignore_errors: yes
+    
+      #      - name: recreate repo folder
+      #command: "mkdir /home/colibree/bln"
+
+    - name: 'Cloning repository'
+      git:
+        repo: https://pierangelo1982:alnitek82@bitbucket.org/attividigitaliteam/website.git
+        dest: /home/feeleraweb/feelera-web
+        update: yes
+        version: master
+      ignore_errors: yes
+      register: output
+
+    - name: 'Set Permissions'
+      command: "chmod -R 777 /home/feeleraweb/feelera-web"
+
+    - name: create the feelera web container
+      docker_container:
+        name: "feelera-web"
+        image: attividigitali/feelera-web:latest
+        state: started
+        ports:
+          - "8095:80"
+        links:
+          - docker-mysql:db
+        volumes:
+          - /home/feeleraweb/feelera_static/public/:/var/www/html/public
+          - /home/feeleraweb/feelera_static/storage/:/var/www/html/storage
+        recreate: yes
+      register: output
+  
+
